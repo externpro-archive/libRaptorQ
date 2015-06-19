@@ -49,6 +49,8 @@ OPTION(LTO "Link Time Optimization" ON)
 # profiling support: optimize the library
 OPTION(PROFILING "Optimize library assembly" ON)
 
+OPTION(BUILD_SHARED_LIB "Build and install Shared library" ON)
+
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake; ${CMAKE_MODULE_PATH})
 
 FIND_PACKAGE(Threads REQUIRED)
@@ -301,6 +303,7 @@ IF(PROFILING)
 	ADD_DEPENDENCIES(RaptorQ_static profile)
 	SET_TARGET_PROPERTIES(RaptorQ_static PROPERTIES COMPILE_FLAGS ${PROFILE_SET})
 ENDIF()
+SET(INSTALL_LIBS RaptorQ_static)
 
 ADD_EXECUTABLE(make_deterministic src/deterministic.cpp)
 add_custom_command(
@@ -315,51 +318,58 @@ add_custom_target(
   DEPENDS deterministic.run
 )
 
-ADD_DEFINITIONS(-DRAPTORQ_DLL)
-ADD_DEFINITIONS(-DRAPTORQ_DLL_EXPORTS)
+IF(BUILD_SHARED_LIB)
+  ADD_DEFINITIONS(-DRAPTORQ_DLL)
+  ADD_DEFINITIONS(-DRAPTORQ_DLL_EXPORTS)
 
-ADD_LIBRARY(RaptorQ SHARED ${SOURCES} ${HEADERS})
-# add profiling dependency if requested
-IF(PROFILING)
-	ADD_DEPENDENCIES(RaptorQ profile)
+  ADD_LIBRARY(RaptorQ SHARED ${SOURCES} ${HEADERS})
+  # add profiling dependency if requested
+  IF(PROFILING)
+  	ADD_DEPENDENCIES(RaptorQ profile)
 	SET_TARGET_PROPERTIES(RaptorQ PROPERTIES COMPILE_FLAGS ${PROFILE_SET})
-ENDIF()
-SET_TARGET_PROPERTIES (
+  ENDIF()
+  SET_TARGET_PROPERTIES (
 	RaptorQ
 	PROPERTIES
 	LINK_FLAGS "-Wl,-z,now,-z,relro"
-)
-
+  )
+  LIST(APPEND INSTALL_LIBS RaptorQ)
+  SET(theRaptorQLib RaptorQ)
+ELSE()
+  SET(theRaptorQLib RaptorQ_static)
+ENDIF()
 
 # add main tests
 ADD_EXECUTABLE(libRaptorQ-test EXCLUDE_FROM_ALL test/rfc_test.cpp)
-ADD_DEPENDENCIES(libRaptorQ-test RaptorQ)
+ADD_DEPENDENCIES(libRaptorQ-test ${theRaptorQLib})
 TARGET_LINK_LIBRARIES(libRaptorQ-test ${CMAKE_THREAD_LIBS_INIT})
 # link the library we just built, too
-TARGET_LINK_LIBRARIES(libRaptorQ-test ${LIBRARY_OUTPUT_PATH}/libRaptorQ.so)
+TARGET_LINK_LIBRARIES(libRaptorQ-test ${theRaptorQLib})
 INSTALL(TARGETS libRaptorQ-test RUNTIME DESTINATION bin/ OPTIONAL)
 ADD_CUSTOM_TARGET(tests DEPENDS libRaptorQ-test)
 
 # build examples
 # C interface
 ADD_EXECUTABLE(test_c EXCLUDE_FROM_ALL test/test_c.c)
-ADD_DEPENDENCIES(test_c RaptorQ)
+ADD_DEPENDENCIES(test_c ${theRaptorQLib})
 TARGET_LINK_LIBRARIES(test_c ${CMAKE_THREAD_LIBS_INIT})
 # link the library we just built, too
-TARGET_LINK_LIBRARIES(test_c ${LIBRARY_OUTPUT_PATH}/libRaptorQ.so)
+TARGET_LINK_LIBRARIES(test_c ${theRaptorQLib})
 # CPP interface
 ADD_EXECUTABLE(test_cpp EXCLUDE_FROM_ALL test/test_cpp.cpp)
-ADD_DEPENDENCIES(test_cpp RaptorQ)
+ADD_DEPENDENCIES(test_cpp ${theRaptorQLib})
 TARGET_LINK_LIBRARIES(test_cpp ${CMAKE_THREAD_LIBS_INIT})
 # link the library we just built, too
-TARGET_LINK_LIBRARIES(test_cpp ${LIBRARY_OUTPUT_PATH}/libRaptorQ.so)
+TARGET_LINK_LIBRARIES(test_cpp ${theRaptorQLib})
 ADD_CUSTOM_TARGET(examples DEPENDS test_c test_cpp)
 
 ADD_CUSTOM_TARGET(everything DEPENDS Make_static_deterministic tests examples docs)
 
 
 INSTALL(FILES ${HEADERS} DESTINATION include/RaptorQ/)
-INSTALL(TARGETS RaptorQ RaptorQ_static
+INSTALL(TARGETS ${INSTALL_LIBS} EXPORT libraptorq-targets
 	 LIBRARY DESTINATION lib COMPONENT libraries
-	 ARCHIVE DESTINATION lib COMPONENT libraries)
+	 ARCHIVE DESTINATION lib COMPONENT libraries
+	 RUNTIME DESTINATION bin COMPONENT libraries)
+INSTALL(EXPORT libraptorq-targets DESTINATION lib/cmake)
 
