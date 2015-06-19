@@ -20,31 +20,34 @@
 PROJECT(libRaptorQ)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 AUX_SOURCE_DIRECTORY(. SRC_LIST)
+INCLUDE(flags OPTIONAL)
 
-SET(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build mode") # default build type
-SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo MinSizeRel)
+IF(NOT CMAKE_BUILD_TYPE) # if not specified, default to "Release"
+  SET(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build mode") # default build type
+  SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo MinSizeRel)
+ENDIF()
 
 MESSAGE(STATUS "Build selected: ${CMAKE_BUILD_TYPE}")
 
-# easy compiler choice...
-SET(CMAKE_CXX_COMPILER "g++" CACHE STRING "C++ Compiler") # default compiler
-SET(CMAKE_C_COMPILER "gcc" CACHE STRING "C Compiler") # default compiler
+IF(NOT CMAKE_CXX_COMPILER)
+  SET(CMAKE_CXX_COMPILER "g++" CACHE STRING "C++ Compiler") # default compiler
+ENDIF()
+IF(NOT CMAKE_C_COMPILER)
+  SET(CMAKE_C_COMPILER "gcc" CACHE STRING "C Compiler") # default compiler
+ENDIF()
+IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+  SET_PROPERTY(CACHE CMAKE_CXX_COMPILER PROPERTY STRINGS clang++ g++ c++)
+  SET_PROPERTY(CACHE CMAKE_C_COMPILER PROPERTY STRINGS clang gcc cc)
+  MARK_AS_ADVANCED(CLEAR CMAKE_CXX_COMPILER CMAKE_C_COMPILER)
+ENDIF()
 SET(STDLIB "libstdc++" CACHE STRING "Standard library to use")
-SET_PROPERTY(CACHE CMAKE_CXX_COMPILER PROPERTY STRINGS clang++ g++ c++)
-SET_PROPERTY(CACHE CMAKE_C_COMPILER PROPERTY STRINGS clang gcc cc)
 SET_PROPERTY(CACHE STDLIB PROPERTY STRINGS libc++ libstdc++)
-MARK_AS_ADVANCED(CLEAR
-	CMAKE_CXX_COMPILER
-	CMAKE_C_COMPILER
-)
 
 # Link time optimization: smaller, better optimized libraries
-SET(LTO "yes" CACHE STRING "Link Time Optimization")
-SET_PROPERTY(CACHE LTO PROPERTY STRINGS yes no)
+OPTION(LTO "Link Time Optimization" ON)
 
 # profiling support: optimize the library
-SET(PROFILING "yes" CACHE STRING "Optimize library assembly")
-SET_PROPERTY(CACHE PROFILING PROPERTY STRINGS yes no)
+OPTION(PROFILING "Optimize library assembly" ON)
 
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake; ${CMAKE_MODULE_PATH})
 
@@ -55,28 +58,27 @@ INCLUDE_DIRECTORIES(SYSTEM ${EIGEN3_INCLUDE_DIR})
 
 #This only works if *FIRST* you checkout a commit and *THEN* you run cmake
 IF(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/.git/)
-MESSAGE(STATUS "directory found")
-IF(GIT_FOUND)
+  MESSAGE(STATUS "directory found")
+  IF(GIT_FOUND)
     EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} rev-parse --sq HEAD OUTPUT_VARIABLE SEED)
     SET(DETERMINISTIC "-frandom-seed=${SEED}")
-ENDIF()
+  ENDIF()
 ELSE()
     SET(DETERMINISTIC "-frandom-seed=RaptorQ_nongit")
     MESSAGE(WARNING "Not inside a git repository. compiler seed is now constant.")
 ENDIF()
 
-IF("${LTO}" STREQUAL "yes")
+IF(LTO)
 	MESSAGE(STATUS "Link Time Optimization activated")
 ELSE()
 	MESSAGE(STATUS "Link Time Optimization deactivated")
 ENDIF()
 #activate profiling if requested.
 # profiling needs to build a test, which needs threading.
-IF (PROFILING STREQUAL "yes")
+IF (PROFILING)
 	MESSAGE(STATUS "Profiling activated")
 ELSE()
 	MESSAGE(STATUS "Profiling deactivated")
-	SET (PROFILING	"no")
 ENDIF()
 
 # setup the compiler and the standard library
@@ -102,14 +104,14 @@ ENDIF()
 # C++ options
 #
 IF(${CMAKE_CXX_COMPILER} MATCHES ".*clang.*")
-	IF (PROFILING STREQUAL "yes")
+	IF (PROFILING)
 		MESSAGE(WARNING		"Profiling and clang breaks deterministic builds")
 		SET (PROFILE_GET           "-fprofile-instr-generate -g")
 		SET (PROFILE_GET_FILE      "RaptorQ.profraw")
 		SET (PROFILE_SET_FILE      "RaptorQ.profdata")
 		SET (PROFILE_SET           "-fprofile-instr-use=${PROFILE_SET_FILE}")
 	ENDIF()
-	IF("${LTO}" STREQUAL "yes")
+	IF(LTO)
 		SET(CMAKE_CXX_FLAGS		"${CMAKE_CXX_FLAGS} -flto -fuse-ld=gold")
 		SET(CMAKE_C_FLAGS		"${CMAKE_C_FLAGS} -flto -fuse-ld=gold")
 		FIND_PROGRAM(LLVM_AR "llvm-ar")
@@ -130,7 +132,7 @@ IF(${CMAKE_CXX_COMPILER} MATCHES ".*clang.*")
 ELSE()
 	# warn: clang+ and g++ get the same *g++ regexp, keep the "else" above or match the "/" in the regexp
 	IF(${CMAKE_CXX_COMPILER} MATCHES "^.*c[+][+]$" OR ${CMAKE_CXX_COMPILER} MATCHES "^(.*/)g[+][+]$")
-	IF (PROFILING STREQUAL "yes")
+	IF (PROFILING)
 		SET (PROFILE_GET           "-fprofile-generate")
 		# gcc creates a couple more files than clang for prifiling. Track them.
 		SET (PROFILE_GET_FILE
@@ -144,7 +146,7 @@ CMakeFiles/test_c_profiled.dir/test/test_c.c.gcda)
 		SET (PROFILE_SET_FILE      ${PROFILE_GET_FILE})
 		SET (PROFILE_SET           "-fprofile-use")
 	ENDIF()
-	IF("${LTO}" STREQUAL "yes")
+	IF(LTO)
 		SET(CMAKE_CXX_FLAGS		"${CMAKE_CXX_FLAGS} -flto -fuse-ld=gold")
 		SET(CMAKE_C_FLAGS		"${CMAKE_C_FLAGS} -flto -fuse-ld=gold")
 		FIND_PROGRAM(GCC_AR "gcc-ar")
@@ -227,7 +229,7 @@ SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 # LATEX documentation
 add_subdirectory(${CMAKE_SOURCE_DIR}/doc)
 
-IF(PROFILING STREQUAL "yes")
+IF(PROFILING)
 	# we need to build a profiling version of the static library.
 	# then we will run the profiling,  and then finally rebuild
 	# everything with the profiling optimizations
@@ -295,7 +297,7 @@ SET_TARGET_PROPERTIES (
 	PROPERTIES
 	LINK_FLAGS "-Wl,-z,now,-z,relro -pie"
 )
-IF(PROFILING STREQUAL "yes")
+IF(PROFILING)
 	ADD_DEPENDENCIES(RaptorQ_static profile)
 	SET_TARGET_PROPERTIES(RaptorQ_static PROPERTIES COMPILE_FLAGS ${PROFILE_SET})
 ENDIF()
@@ -318,7 +320,7 @@ ADD_DEFINITIONS(-DRAPTORQ_DLL_EXPORTS)
 
 ADD_LIBRARY(RaptorQ SHARED ${SOURCES} ${HEADERS})
 # add profiling dependency if requested
-IF(PROFILING STREQUAL "yes")
+IF(PROFILING)
 	ADD_DEPENDENCIES(RaptorQ profile)
 	SET_TARGET_PROPERTIES(RaptorQ PROPERTIES COMPILE_FLAGS ${PROFILE_SET})
 ENDIF()

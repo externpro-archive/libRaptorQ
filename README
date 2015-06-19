@@ -126,12 +126,12 @@ currently is the clang + profiling one. It probably can not
 be fixed.
 
 You can customize the CMake build with tthe following variables:
-PROFILING	yes/no: Default:yes. Activate or deactivate profiling.
+PROFILING	ON/OFF: Default:ON. Activate or deactivate profiling.
 				Profiling compiles everything, then runs a test to see
 				which code paths are more used. Then it recompiles everything
-				but optimizing for for those code paths.
+				but optimizing for those code paths.
 				Only for gcc/clang.
-LTO			yes/no: Default:yes. Activate or deactivate Link time Optimization
+LTO			ON/OFF: Default:ON. Activate or deactivate Link time Optimization
 				Makes the library smaller and better optimized.
 				Only for gcc/clang.
 STDLIB		libc++,libstdc++. Choose the standard library to use.
