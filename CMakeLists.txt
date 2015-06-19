@@ -283,7 +283,7 @@ IF(PROFILING)
 	ADD_EXECUTABLE(test_c_profiled test/test_c.c)
 	ADD_DEPENDENCIES(test_c_profiled RaptorQ_static_profiling)
 	SET_TARGET_PROPERTIES(test_c_profiled PROPERTIES COMPILE_FLAGS ${PROFILE_GET})
-	TARGET_LINK_LIBRARIES(test_c_profiled ${LIBRARY_OUTPUT_PATH}/libRaptorQ_static_profiling.a)
+	TARGET_LINK_LIBRARIES(test_c_profiled RaptorQ_static_profiling)
 	STRING(SUBSTRING ${STDLIB} 3 -1 STDLIB_NAME)
 	TARGET_LINK_LIBRARIES(test_c_profiled ${STDLIB_NAME})
 	TARGET_LINK_LIBRARIES(test_c_profiled m) # math library
@@ -340,7 +340,7 @@ SET(INSTALL_LIBS RaptorQ_static)
 ADD_EXECUTABLE(make_deterministic src/deterministic.cpp)
 add_custom_command(
   OUTPUT deterministic.run
-  COMMAND make_deterministic ${LIBRARY_OUTPUT_PATH}/libRaptorQ_static.a
+  COMMAND make_deterministic $<TARGET_FILE:RaptorQ_static>
   DEPENDS RaptorQ_static
   COMMENT "Removing creation date from library..."
   VERBATIM
