@@ -32,6 +32,9 @@
 #include <thread>
 #include <tuple>
 #include <vector>
+#if _MSC_VER <= 1800 // Visual Studio 2013, MSVC++ 12.0
+#define noexcept throw()
+#endif
 
 
 uint64_t decode (uint32_t mysize, std::mt19937_64 &rnd, float drop_prob,
@@ -291,9 +294,13 @@ private:
 
 	    static time_point now() noexcept
 	    {
+#ifdef _MSC_VER
+	        return time_point(duration(static_cast<rep>(__rdtsc())));
+#else
 	        unsigned lo, hi;
 	        asm volatile("rdtsc" : "=a" (lo), "=d" (hi));
 	        return time_point(duration(static_cast<rep>(hi) << 32 | lo));
+#endif
 	    }
 	};
 	// typedef std::chrono::microseconds microseconds;

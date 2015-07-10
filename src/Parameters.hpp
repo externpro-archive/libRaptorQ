@@ -27,6 +27,11 @@
 #include <cmath>
 #include <Eigen/Core>
 #include <vector>
+#if defined(_MSC_VER)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+typedef SSIZE_T ssize_t;
+#endif
 
 //
 // This implements both phase 1 and phase 2 of the encoding
