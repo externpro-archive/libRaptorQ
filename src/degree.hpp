@@ -22,14 +22,18 @@
 #define RAPTORQ_DEGREE_HPP
 
 #include <array>
+#include <cstdint>
 
 namespace RaptorQ {
 namespace Impl {
 
+#pragma warning(push)
+#pragma warning(disable : 4068) // MSVC unknown pragma
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #pragma clang diagnostic ignored "-Wglobal-constructors"
 #pragma clang diagnostic ignored "-Wexit-time-destructors"
+#pragma warning(pop)
 
 static const std::array<uint32_t, 31> degree_distribution = {
 							  0,    5243,  529531,  704294,  791675,  844104,
@@ -39,7 +43,10 @@ static const std::array<uint32_t, 31> degree_distribution = {
 						1010129, 1011876, 1013490, 1014983, 1016370, 1017662,
 						1048576};
 
+#pragma warning(push)
+#pragma warning(disable : 4068) // MSVC unknown pragma
 #pragma clang diagnostic pop
+#pragma warning(pop)
 
 }	// namespace Impl
 }	// namespace RaptorQ

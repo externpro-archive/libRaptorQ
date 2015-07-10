@@ -231,8 +231,8 @@ IF(UNIX)
   MESSAGE(STATUS "UNIX system found")
   ADD_DEFINITIONS(-DUNIX)
 ELSEIF(WIN32)
-  MESSAGE(STATUS "Wndows system found. WARN: not tested!")
-  ADD_DEFINITION(-DWIN32)
+  MESSAGE(STATUS "Windows system found. WARN: not tested!")
+  ADD_DEFINITIONS(-DWIN32)
 ENDIF()
 
 
