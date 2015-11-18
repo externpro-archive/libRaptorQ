@@ -46,13 +46,12 @@ uint32_t Rand::get (const uint32_t y, const uint8_t i, const uint32_t m)
 }
 
 
-#pragma warning(push)
-#pragma warning(disable : 4068) // MSVC unknown pragma
+#ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #pragma clang diagnostic ignored "-Wglobal-constructors"
 #pragma clang diagnostic ignored "-Wexit-time-destructors"
-#pragma warning(pop)
+#endif
 
 /* RFC, section 5.5:  Random Numbers
  *
@@ -281,10 +280,9 @@ const std::array<uint32_t, 256> Rand::V3 = {
 	3432275192
 	};
 
-#pragma warning(push)
-#pragma warning(disable : 4068) // MSVC unknown pragma
+#ifdef __clang__
 #pragma clang diagnostic pop
-#pragma warning(pop)
+#endif
 
 }	// namespace Impl
 }	// namespace RaptorQ

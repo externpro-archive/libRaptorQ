@@ -22,13 +22,12 @@
 namespace RaptorQ {
 namespace Impl {
 
-#pragma warning(push)
-#pragma warning(disable : 4068) // MSVC unknown pragma
+#ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #pragma clang diagnostic ignored "-Wglobal-constructors"
 #pragma clang diagnostic ignored "-Wexit-time-destructors"
-#pragma warning(pop)
+#endif
 
 static const std::array<uint8_t, 510> oct_exp = {
    1, 2, 4, 8, 16, 32, 64, 128, 29, 58, 116, 232, 205, 135, 19, 38, 76,
@@ -87,10 +86,9 @@ static const std::array<uint8_t, 255> oct_log = {
    79, 174, 213, 233, 230, 231, 173, 232, 116, 214, 244, 234, 168, 80,
    88, 175};
 
-#pragma warning(push)
-#pragma warning(disable : 4068) // MSVC unknown pragma
+#ifdef __clang__
 #pragma clang diagnostic pop
-#pragma warning(pop)
+#endif
 
 }	// namespace Impl
 }	// namespace RaptorQ
