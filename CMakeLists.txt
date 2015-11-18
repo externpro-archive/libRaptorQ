@@ -51,6 +51,13 @@ OPTION(PROFILING "Optimize library assembly" ON)
 
 OPTION(BUILD_SHARED_LIB "Build and install Shared library" ON)
 
+# internal compiler error from eigen Core/MatrixBase.h
+# in splice_child_die at dwarf2out.c:4706
+# unless we turn OFF LTO for this case (gcc 4.8)
+IF(BUILD_SHARED_LIB AND LTO AND CMAKE_BUILD_TYPE STREQUAL Debug)
+  SET(LTO OFF)
+ENDIF()
+
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake; ${CMAKE_MODULE_PATH})
 
 FIND_PACKAGE(Threads REQUIRED)
