@@ -356,7 +356,6 @@ IF(PROFILING)
 	ADD_DEPENDENCIES(RaptorQ_static profile)
 	SET_TARGET_PROPERTIES(RaptorQ_static PROPERTIES COMPILE_FLAGS ${PROFILE_SET})
 ENDIF()
-SET(INSTALL_LIBS RaptorQ_static)
 
 ADD_EXECUTABLE(make_deterministic src/deterministic.cpp)
 add_custom_command(
@@ -386,9 +385,10 @@ IF(BUILD_SHARED_LIB)
 	PROPERTIES
 	LINK_FLAGS "-Wl,-z,now,-z,relro"
   )
-  LIST(APPEND INSTALL_LIBS RaptorQ)
+  SET(INSTALL_LIBS RaptorQ)
   SET(theRaptorQLib RaptorQ)
 ELSE()
+  SET(INSTALL_LIBS RaptorQ_static)
   SET(theRaptorQLib RaptorQ_static)
 ENDIF()
 
