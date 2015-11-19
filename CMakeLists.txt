@@ -149,6 +149,39 @@ if(NOT COMMAND xpCheckCompilerFlags)
   endfunction()
 endif()
 
+if(NOT COMMAND xpCheckLinkerFlag)
+  function(xpCheckLinkerFlag _FLAG _RESULT)
+    set(srcFile ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/linksrc.cxx)
+    file(WRITE ${srcFile} "int main() { return 0; }\n")
+    message(STATUS "Performing Linker Test ${_RESULT}")
+    try_compile(${_RESULT} ${CMAKE_BINARY_DIR} ${srcFile}
+      CMAKE_FLAGS -DCMAKE_EXE_LINKER_FLAGS="${_FLAG}"
+      OUTPUT_VARIABLE OUTPUT
+      )
+    if(${${_RESULT}})
+      message(STATUS "Performing Linker Test ${_RESULT} - Success")
+    else()
+      message(STATUS "Performing Linker Test ${_RESULT} - Failed")
+    endif()
+    set(${_RESULT} ${${_RESULT}} PARENT_SCOPE)
+  endfunction()
+endif()
+
+if(NOT COMMAND xpCheckLinkerOptions)
+  function(xpCheckLinkerOptions linkVar options)
+    separate_arguments(options)
+    foreach(opt ${options})
+      string(REPLACE "-" "_" opt_ ${opt})
+      string(REPLACE "," "" opt_ ${opt_})
+      xpCheckLinkerFlag("${opt}" has_link${opt_})
+      if(has_link${opt_})
+        xpStringAppendIfDne(${linkVar} "${opt}")
+      endif()
+    endforeach()
+    set(${linkVar} "${${linkVar}}" PARENT_SCOPE)
+  endfunction()
+endif()
+
 #
 # C++ options
 #
@@ -299,11 +332,14 @@ IF(PROFILING)
 	# build the static library for profiling
 	ADD_LIBRARY(RaptorQ_static_profiling STATIC ${SOURCES} ${HEADERS})
 	# ar: add deterministic build
-	SET_TARGET_PROPERTIES (
-		RaptorQ_static_profiling
-		PROPERTIES
-		LINK_FLAGS "-Wl,-z,now,-z,relro -pie"
-	)
+	xpCheckLinkerOptions(RaptorQ_static_profiling_linkFlags "-Wl,-z,now,-z,relro -pie")
+	IF(RaptorQ_static_profiling_linkFlags)
+		SET_TARGET_PROPERTIES (
+			RaptorQ_static_profiling
+			PROPERTIES
+			LINK_FLAGS "${RaptorQ_static_profiling_linkFlags}"
+		)
+        ENDIF()
 	TARGET_LINK_LIBRARIES(RaptorQ_static_profiling  stdc++)
 	SET_TARGET_PROPERTIES(RaptorQ_static_profiling PROPERTIES COMPILE_FLAGS ${PROFILE_GET})
 
@@ -354,11 +390,14 @@ IF(PROFILING)
 ENDIF()
 
 ADD_LIBRARY(RaptorQ_static STATIC ${SOURCES} ${HEADERS})
-SET_TARGET_PROPERTIES (
-	RaptorQ_static
-	PROPERTIES
-	LINK_FLAGS "-Wl,-z,now,-z,relro -pie"
-)
+xpCheckLinkerOptions(RaptorQ_static_linkFlags "-Wl,-z,now,-z,relro -pie")
+IF(RaptorQ_static_linkFlags)
+	SET_TARGET_PROPERTIES (
+		RaptorQ_static
+		PROPERTIES
+		LINK_FLAGS "${RaptorQ_static_linkFlags}"
+	)
+ENDIF()
 IF(PROFILING)
 	ADD_DEPENDENCIES(RaptorQ_static profile)
 	SET_TARGET_PROPERTIES(RaptorQ_static PROPERTIES COMPILE_FLAGS ${PROFILE_SET})
@@ -387,11 +426,14 @@ IF(BUILD_SHARED_LIB)
   	ADD_DEPENDENCIES(RaptorQ profile)
 	SET_TARGET_PROPERTIES(RaptorQ PROPERTIES COMPILE_FLAGS ${PROFILE_SET})
   ENDIF()
-  SET_TARGET_PROPERTIES (
-	RaptorQ
-	PROPERTIES
-	LINK_FLAGS "-Wl,-z,now,-z,relro"
-  )
+  xpCheckLinkerOptions(RaptorQ_linkFlags "-Wl,-z,now,-z,relro")
+  IF(RaptorQ_linkFlags)
+	SET_TARGET_PROPERTIES (
+		RaptorQ
+		PROPERTIES
+		LINK_FLAGS "${RaptorQ_linkFlags}"
+	)
+  ENDIF()
   SET(INSTALL_LIBS RaptorQ)
   SET(theRaptorQLib RaptorQ)
 ELSE()
