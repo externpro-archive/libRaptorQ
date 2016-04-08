@@ -469,11 +469,7 @@ ADD_EXECUTABLE(test_c EXCLUDE_FROM_ALL test/test_c.c)
 ADD_DEPENDENCIES(test_c ${theRaptorQLib})
 TARGET_LINK_LIBRARIES(test_c ${CMAKE_THREAD_LIBS_INIT})
 # link the library we just built, too
-<<<<<<< HEAD
-TARGET_LINK_LIBRARIES(test_c ${theRaptorQLib})
-=======
-TARGET_LINK_LIBRARIES(test_c ${LIBRARY_OUTPUT_PATH}/libRaptorQ.so m)
->>>>>>> a9f6af7... 2 bugs: test_c & De_Interleaver initialization
+TARGET_LINK_LIBRARIES(test_c ${theRaptorQLib}) # TODO: m needed? do it in a multi-platform way...
 # CPP interface
 ADD_EXECUTABLE(test_cpp EXCLUDE_FROM_ALL test/test_cpp.cpp)
 ADD_DEPENDENCIES(test_cpp ${theRaptorQLib})
